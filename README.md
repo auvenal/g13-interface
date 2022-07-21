@@ -3,5 +3,6 @@ Simple script interfaces to the wonderful Logitech g13 linux driver: https://git
 
 
 # configs
-for the shell version direct commands (as laied out in https://github.com/ecraven/g13/blob/master/README.md) should be used
-for the ruby version TOML is used see example: 
+for the shell version direct g13d commands should be used (as laid out in https://github.com/ecraven/g13/blob/master/README.md)
+
+for the ruby version TOML is used (see example config: https://github.com/auvenal/g13-interface/blob/main/default.toml)
