@@ -1,0 +1,126 @@
+#!/bin/bash
+#########################################################
+#g13
+# Author : Alex Auvenshine
+#   Date : 2019-12-19
+#License : MIT 
+#
+#########################################################
+
+###Constants###
+declare -r VERSION='1.1.0'
+declare -r DEFAULT_CONFIG_DIR="$HOME/.config/g13"
+declare -r DEFAULT_PROFILE='default'
+declare -r G13_PATH='/opt/g13/g13d'
+
+#####Vars######
+SUDO=''
+
+###Switches####
+declare -A switches=(
+['profile']="$DEFAULT_PROFILE"
+['configDir']="$DEFAULT_CONFIG_DIR"
+)
+
+###Functions###
+usage(){
+	cat <<END
+
+Usage: ${BASH_SOURCE##*/}  [OPTIONS]... [PROFILE]
+ -c,--config-dir <DIR>  check for profile configs in <DIR>
+                        <DIR>:
+                          may be any readable directory
+                        NOTE: if not specified, '$DEFAULT_CONFIG_DIR'
+                          will be assumed
+
+ -h, --help             display this help message and exit.
+ -V, --version          display version info and exit.
+
+ --                     process no more options. Treat all 
+                        remaning args like [PROFILE].
+
+[PROFILE]:
+ name of a profile config located in '$DEFAULT_CONFIG_DIR'
+ cofig directory can be changed through --config-dir
+
+ if no [PROFILE] is specified, '$DEFAULT_PROFILE' will be used.
+
+END
+}
+
+
+#####Main######
+while [[ $# -gt 0 ]]; do
+	dx=()
+	#resolve '=' seperated args
+	if [[ $1 =~ ^--?[a-zA-Z0-9_-]+=.+$ ]]; then	#if '=' seperated
+		dx[0]="${1%%=*}"	#get first half '-R'=asdf
+		dx[1]="${1#-*=}"	#get second half -R='asdf'
+		shift			#shift past arg
+		#set $@ = -R asdf $@
+		set -- "${dx[@]}" "$@"
+	fi
+	dx=()
+	#seperate composite args eg. -aeiou to -a -e -i -o -u
+	if [[ $1 =~ ^-[a-zA-Z0-9]{2,}$ ]]; then #is $1 is composite
+		for ((i=1; i<${#1}; i++)); do	#loop through chars ignoring the 1st
+			dx[$i]="-${1:$i:1}"	#print current char with a -
+		done
+		shift
+		set -- "${dx[@]}" "$@"
+	fi
+		
+	case $1 in
+		-c|--config-dir) 
+			if [[ -d $2 ]] && [[ -r $2 ]]; then
+				echo "using config dir '$2'..."
+				switches['configDir']="$2"
+				shift
+			else
+				echo "${BASH_SOURCE##*/}: error '$2' isn't a directory or isn't readable." 1>&2
+				exit 1
+			fi;;
+		-h|--help) usage; exit 0;;
+		-V|--version) echo "${BASH_SOURCE##*/}: v$VERSION"; exit 0;;
+		--) 
+			while [[ $# -gt 1 ]]; do
+				shift
+				at+=("$1")
+			done;;
+		*) at+=("$1");;
+	esac
+	shift
+done
+set -- "${at[@]}"
+
+#if we're not root already, run things with sudo
+if [[ $EUID -ne 0 ]]; then
+	SUDO=sudo
+fi
+
+#if we still have args, try and use one as a profile
+if [[ $# -gt 0 ]]; then
+	#if $1 does not contain any slashes '/' or NULLs '\x00' AND
+	if ! [[ $1 =~ [/\x00] ]]; then
+		switches['profile']="$1"
+	else
+		echo "${BASH_SOURCE##*/}: error '$1', invalid profile name." 1>&2
+	fi
+fi
+
+#if $1 exists AND is read-able
+if [[ -a ${switches['configDir']}/${switches['profile']} ]] && [[ -r ${switches['configDir']}/${switches['profile']} ]]; then
+	#if $1 is a normal file
+	if [[ -f ${switches['configDir']}/${switches['profile']} ]]; then
+		$SUDO "$G13_PATH" &
+		sed -ne 's/[ 	\s\t]#.*//' -e '/[^ 	\s\t]/p' "${switches['configDir']}/${switches['profile']}" > /tmp/g13-0
+		wait
+	else
+		echo "${BASH_SOURCE##*/}: error profile config: '${switches['profile']}' is not a normal file." 1>&2
+		exit 2
+	fi
+else
+	echo "${BASH_SOURCE##*/}: error profile config: '${switches['profile']}' no such file or file is unreadable." 1>&2
+	exit 3
+fi
+
