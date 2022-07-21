@@ -1,0 +1,190 @@
+# default g13 profile
+# Alex - 2021-05-28
+
+# section for overarching settings
+[meta]
+discription='default g13 profile'
+version='1.0.0'
+author='Alex'
+date=2021-05-28
+
+# mode to start with. If unspecified the first in the hash will be used
+startingMode='1'
+# default rgb to use (if unspecified in mode
+rgb=[ 255, 0, 0 ]
+keyDisplay=true
+#      [ BD]  [ L1] [ L2] [ L3] [ L4]
+#         [ M1]   [ M2]     [ M3]   [ MR]
+#       [ G1][ G2][ G3][ G4][ G5][ G6][ G7]
+#       [ G8][ G9][G10][G11][G12][G13][G14]
+#           \[G15][G16][G17][G18][G19]/
+#                \[G20][G21][G22]/    [TOP]
+#                                 [LFT] o
+#                                     [DWN]
+
+
+# each item in mode may set the keys however the user desires
+[mode.1.keys]
+# left round button
+bd=''
+# lcd ajacent
+l1=''
+l2=''
+l3=''
+l4=''
+# m buttons
+m1='>mode 1'
+m2='>mode 2'
+m3='>mode 3'
+mr=''
+# g keys
+g1='KEY_ESC'
+g2=''
+g3='KEY_Q'
+g4='KEY_W'
+g5='KEY_E'
+g6='KEY_R'
+g7=''
+g8='KEY_TAB'
+g9=''
+g10='KEY_A'
+g11='KEY_S'
+g12='KEY_D'
+g13='KEY_F'
+g14=''
+g15='KEY_LEFTSHIFT'
+g16='KEY_Z'
+g17='KEY_X'
+g18='KEY_C'
+g19='KEY_R'
+g20='KEY_LEFTCTRL'
+g21='KEY_LEFTALT'
+g22='KEY_SPACE'
+# stick press in
+top=''
+# stick mouse left
+left=''
+# stick mouse right
+down=''
+[mode.1.settings]
+# ascii graphic to display
+asciiGraphic='''
+[   ]  [   ] [   ] [   ] [   ]
+   [*M1]   [ M2]     [ M3]   [   ]
+ [esc][   ][ q ][ w ][ e ][ r ][   ]
+ [tab][   ][ a ][ s ][ d ][ f ][   ]
+     \[shf][ z ][ x ][ c ][ r ]/
+          \[ctr][alt][spa]/    [   ]
+                           [   ] o
+                               [   ]
+'''
+
+[mode.2.keys]
+# left round button
+bd=''
+# lcd ajacent
+l1=''
+l2=''
+l3=''
+l4=''
+# m buttons
+m1='>mode 1'
+m2='>mode 2'
+m3='>mode 3'
+mr=''
+# g keys
+g1='KEY_ESC'
+g2='KEY_2'
+g3='KEY_Q'
+g4='KEY_W'
+g5='KEY_E'
+g6='KEY_R'
+g7=''
+g8='KEY_TAB'
+g9=''
+g10='KEY_A'
+g11='KEY_S'
+g12='KEY_D'
+g13='KEY_F'
+g14=''
+g15='KEY_LEFTSHIFT'
+g16='KEY_Z'
+g17='KEY_X'
+g18='KEY_C'
+g19='KEY_R'
+g20='KEY_LEFTCTRL'
+g21='KEY_LEFTALT'
+g22='KEY_SPACE'
+# stick press in
+top=''
+# stick mouse left
+left=''
+# stick mouse right
+down=''
+[mode.2.settings]
+# ascii graphic to display
+asciiGraphic='''
+[   ]  [   ] [   ] [   ] [   ]
+   [ M1]   [*M2]     [ M3]   [   ]
+ [esc][   ][ q ][ w ][ e ][ r ][   ]
+ [tab][   ][ a ][ s ][ d ][ f ][   ]
+     \[shf][ z ][ x ][ c ][ r ]/
+          \[ctr][alt][spa]/    [   ]
+                           [   ] o
+                               [   ]
+'''
+
+[mode.3.keys]
+# left round button
+bd=''
+# lcd ajacent
+l1=''
+l2=''
+l3=''
+l4=''
+# m buttons
+m1='>mode 1'
+m2='>mode 2'
+m3='>mode 3'
+mr=''
+# g keys
+g1='KEY_ESC'
+g2=''
+g3='KEY_Q'
+g4='KEY_W'
+g5='KEY_E'
+g6='KEY_R'
+g7=''
+g8='KEY_TAB'
+g9=''
+g10='KEY_A'
+g11='KEY_S'
+g12='KEY_D'
+g13='KEY_F'
+g14=''
+g15='KEY_LEFTSHIFT'
+g16='KEY_Z'
+g17='KEY_X'
+g18='KEY_C'
+g19='KEY_R'
+g20='KEY_LEFTCTRL'
+g21='KEY_LEFTALT'
+g22='KEY_SPACE'
+# stick press in
+top=''
+# stick mouse left
+left=''
+# stick mouse right
+down=''
+[mode.3.settings]
+# ascii graphic to display
+asciiGraphic='''
+[   ]  [   ] [   ] [   ] [   ]
+   [ M1]   [ M2]     [*M3]   [   ]
+ [esc][   ][ q ][ w ][ e ][ r ][   ]
+ [tab][   ][ a ][ s ][ d ][ f ][   ]
+     \[shf][ z ][ x ][ c ][ r ]/
+          \[ctr][alt][spa]/    [   ]
+                           [   ] o
+                               [   ]
+'''
