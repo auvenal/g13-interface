@@ -12,10 +12,11 @@ require 'tomlrb'
 require 'pp'
 
 ###Constants###
-VERSION='1.0.0'
-DEFAULT_CONFIG_DIR='~/.config/g13'
-DEFAULT_PROFILE='default'
-G13_PATH='/opt/g13/g13d'
+VERSION='1.1.0'				#version in MAJOR.MINOR.FIX
+DEFAULT_CONFIG_DIR='~/.config/g13'	#default directory to search for profiles under
+DEFAULT_PROFILE='default'		#default profile to load in none specified
+G13_PATH='/opt/g13/g13d'		#path to g13d executable
+#mapping of settable keynames to 3 (or fewer) char shorthand names. This is used for the dynamic keymap to show what each G13 key is mapped to in the current mode
 KEY_SHORT_NAMES={
 'apostrophe' => "'",
 'backslash' => '\\',
@@ -53,11 +54,13 @@ KEY_SHORT_NAMES={
 'slash' => '/',
 'space' => 'spa'
 }
+#short usage message
 USAGE=<<~END
 
   Usage: #{File.basename(__FILE__)} [-h|--help] [-V|--version] [-c|--config-dir <DIR>] [--] [PROFILE]
 
 END
+#help message
 HELP=<<~END
 
   #{File.basename(__FILE__)}:v#{VERSION}
@@ -87,25 +90,23 @@ HELP=<<~END
 END
 
 #####Vars######
-at=[]
-flag=''   #main portion of the current arg
-after=''  #any subsiquent portions to the current arg (possible "arg arg's" or continued short options)
-dashes=0  
-holding=''
-configFile=''
-mode=''
+at=[]		#array to store unmatched args until arg parsing is finished
+flag=''		#main portion of the current arg
+after=''	#any subsequent portions to the current arg (possible "arg arg's" or continued short options)
+dashes=0  	#store the number of dashes in the current command line arg during arg parsing
+holding=''	#hold the current next arg
+mode=''		#store the name of the current profile mode
 
 ###Switches####
-profile=DEFAULT_PROFILE
-#configDir=Pathname(DEFAULT_CONFIG_DIR)
-configDir=DEFAULT_CONFIG_DIR
+configDir=DEFAULT_CONFIG_DIR	#directory to load profiles from, set by the --config-dir flag
+profile=DEFAULT_PROFILE		#profile to load
 
 ###Functions###
 
 #nextArg - get the next arg for a flag that requires it's own arg(s)
 #takes the current flag, any text after the portion that matched the current flag, and the list of args
 #returns a trimmed version of the 'after' text or the next arg in args
-#if neither supplies an arg exit gracfully
+#if neither supplies an arg exit gracefully
 def nextArg(flag, after, args)
 	ret=''
 	#if 'after' is not empty, use it for the next arg
@@ -136,7 +137,7 @@ def nextArg(flag, after, args)
 	end
 end
 
-#check given configDir for a file matching profile (with or without a '.toml')
+#findConfig - check given configDir for a file matching profile (with or without a '.toml')
 #return the found file, or false if none was found
 def findConfig(configDir, profile)
 	if File.file?("#{configDir}/#{profile}")
@@ -149,7 +150,7 @@ def findConfig(configDir, profile)
 	end
 end
 
-#read the given file and process it as toml
+#readConfig - read the given file and process it as toml
 #return the parsed toml as a hash
 def readConfg(configFile)
 	if File.readable?(configFile)
@@ -160,6 +161,9 @@ def readConfg(configFile)
 	end
 end
 
+#getStartingMode - take the current config hash as an arg and return the first mode to use
+#if meta.startingMode is defined, it's value will be used (assuming it is a valid, existing mode)
+#otherwise the first mode found in the config hash will be used
 def getStartingMode(config)
 	if config['meta'].has_key?('startingMode')
 		if config['mode'].has_key?(config['meta']['startingMode'])
@@ -173,6 +177,9 @@ def getStartingMode(config)
 	end
 end
 
+#getKeyDisplayName - take the current mode and a key and return a 3 char shorthand name to fill into the dynamic keymap
+#shorthand names are mapped from proper keynames via the KEY_SHORT_NAMES hash, the result is space padded to reach 3 chars as needed and then returned
+#the current mode name is used to dynamically fill in mode switching buttons
 def getKeyDisplayName(modeName, keySetting)
 	displayName=''
 	if keySetting == nil
@@ -214,6 +221,8 @@ def getKeyDisplayName(modeName, keySetting)
 	end
 end
 
+#keyDisplay - take the config hash and the current mode and return a dynamic ASCII key display.
+#his uses getKeyDisplayName() to convert each keyname to a 3 char shorthand to keep the "graphic" a constant size
 def keyDisplay(config, modeName)
 	return <<~END
 	[#{getKeyDisplayName(modeName, config['mode'][modeName]['keys']['bd'])}]  [#{getKeyDisplayName(modeName, config['mode'][modeName]['keys']['l1'])}] [#{getKeyDisplayName(modeName, config['mode'][modeName]['keys']['l2'])}] [#{getKeyDisplayName(modeName, config['mode'][modeName]['keys']['l3'])}] [#{getKeyDisplayName(modeName, config['mode'][modeName]['keys']['l4'])}]
@@ -227,32 +236,48 @@ def keyDisplay(config, modeName)
 	END
 end
 
+#setMode - take the config hash and the current mode name and return a string of g13d commands needed to enact the settings
+#additionally, if the dynamic key display is enabled, print it to the screen
 def setMode(config, modeName)
-	output=''
-	rgb=[ 255, 0, 0 ]
+	output=''		#stores the final set of g13d commands
+	rgb=[ 255, 0, 0 ]	#default RGB value
 
+	#if mode.settings.rgb is set, use that for the rgb value
 	if config['mode'][modeName]['settings'].has_key?('rgb')
 		rgb=config['mode'][modeName]['settings']['rgb']
+
+	#or, if meta.rgb is set, use it
 	elsif config['meta'].has_key?('rgb')
 		rgb=config['meta']['rgb']
 	end
+
+	#add rgb g13d command
 	output+="rgb #{rgb[0]} #{rgb[1]} #{rgb[2]}\n"
+
+	#loop over all key settings for the mode
 	config['mode'][modeName]['keys'].each { |key,value|
 		if value == ''
+			#to ensure all keys are overwritten when switching modes, any unused keys are set to an unused g13d command
 			output+="bind #{key.upcase} !mod 0\n"
 		else
+			#otherwise, set the key binding normally
 			output+="bind #{key.upcase} #{value}\n"
 		end
 	}
+
+	#if the current mode enables the keydisplay
 	if config['mode'][modeName]['settings'].has_key?('keyDisplay')
 		if config['mode'][modeName]['settings']['keyDisplay']
 			puts keyDisplay(config, modeName)
 		end
+
+	#or if the key display is enabled in meta
 	elsif config['meta'].has_key?('keyDisplay')
 		if config['meta']['keyDisplay']
 			puts keyDisplay(config, modeName)
 		end
 	end
+
 	return output
 end
 
@@ -291,9 +316,6 @@ while args.length > 0
 		flag=args[0]
 	end
 
-	#puts "flag='#{flag}'"
-	#puts "after='#{after}'"
-
 	#now that we've split the arg off, we can shift past it
 	args.shift
 
@@ -323,7 +345,7 @@ while args.length > 0
 	if ! after.empty? && dashes > 0
 		#if this was a single dash arg, and the remainder didn't start with an equals sign
 		if dashes == 1 && ! after.starts_with?('=')
-			#add a beginning dash as these should be interperated as more single dash args
+			#add a beginning dash as these should be interpreted as more single dash args
 			args.unshift(after.prepend('-'))
 		else
 			#otherwise 'after' should have been used, so print an error
@@ -334,72 +356,70 @@ while args.length > 0
 
 end
 args=at
-$*.keep_if {|arg| args.include?(arg)}
+$*.keep_if {|arg| args.include?(arg)}	#keep only the args that were unparsed (that is to say the args stored in the at array
 
+#if we have unparsed args, attempt to use the 1st as our profile
 if $*.length > 0
 	profile=$*[0]
 	$*.shift
 end
 
-#puts "profile='#{profile}'"
-#puts "configDir='#{configDir}'"
-#puts "args='#{args}'"
-#puts "$*='#{$*}'"
-
+#pull the config from our config dir given the profile name
 config=readConfg(findConfig(configDir, profile))
 
-#pp config
-
+#ensure our config has atleast one mode to use
 if ! config.has_key?('mode') || config['mode'].length < 1
 	$stderr.puts "#{File.basename(__FILE__)}: no modes defined!"
 	exit 3
 end
 
-if config['meta'].has_key?('startingMode') #need to check that this is really a string (need retreiver methods)
-	if config['mode'].has_key?(config['meta']['startingMode'])
-		mode=config['meta']['startingMode']
-	else
-		$stderr.puts "#{File.basename(__FILE__)}: startingMode '#{config['meta']['startingMode']}' is undefined!"
-		exit 3
-	end
-else
-	mode=config['mode'].first[0]
-end
+#set the starting mode
+mode=getStartingMode(config)
 
+#start the userspace driver in the background
 g13 = Thread.new { system("sudo /opt/g13/g13d") }
 
+#trap an ctrl+c (signal 2) and kill the userspace driver
 trap("SIGINT") { 
 	Thread.kill(g13)
 	exit 1
 }
 
+#wait until the output socket exists
 until File.exist?('/tmp/g13-0_out')
+	#TODO: loop counter or some other hang handling
 	sleep 1
 end
 
+#open the input and output sockets
 inio=IO.new(IO.sysopen('/tmp/g13-0','w'))
 outio=IO.new(IO.sysopen('/tmp/g13-0_out','r'))
 
-#puts setMode(config, mode)
-
+#load the config of the starting mode by dumping it into the input socket
 inio << setMode(config, mode)
+#then flush to ensure all is read immediately
 inio.flush
+
+#while our output socket is still open
 until outio.eof?
+	#read the next line of out output socket (most of this loop's time will be spent waiting here)
 	line = outio.gets.chomp
+
 	case line
+		#check if the output is a mode switching command
 		when /^modeup/
-			puts 'modeup'
+			puts 'modeup'	#TODO: implement
 		when /^modedown/
-			puts 'modedown'
+			puts 'modedown'	#TODO: implement
 		when /^mode .+/
 			newMode=line.delete_prefix('mode ')
 			if config['mode'].has_key?(newMode)
-				#puts "setMode(config, '#{newMode}')"
 				inio << setMode(config, newMode)
 				inio.flush
 			else
 				$stderr.puts "#{File.basename(__FILE__)}: mode '#{newMode}' is undefined!"
 			end
+		#otherwise, just print the line from output socket to the screen
 		else puts line
 	end
 end
